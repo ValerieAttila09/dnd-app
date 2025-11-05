@@ -15,28 +15,36 @@ datasource db {
 }
 
 model Board {
-  id            Int       @id @default(autoincrement())
-  title         String
-  columns       Column[]
-  createdAt     DateTime  @default(now())
+  id        Int      @id @default(autoincrement())
+  title     String
+  columns   Column[]
+  createdAt DateTime @default(now())
 }
 
 model Column {
-  id            Int       @id @default(autoincrement())
-  title         String
-  order         Int
-  boardId       Int
-  board         Board     @relation(fields: [boardId], references: [id])
-  tasks         Task[]
+  id      Int    @id @default(autoincrement())
+  title   String
+  order   Int
+  boardId Int
+  board   Board  @relation(fields: [boardId], references: [id])
+  tasks   Task[]
 }
 
 model Task {
-  id            Int       @id @default(autoincrement())
-  title         String
-  description   String?
-  status        String
-  order         Int
-  columnId      Int
-  column        Column    @relation(fields: [columnId], references: [id])
-  createdAt     DateTime  @default(now())
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  status      String
+  order       Int
+  columnId    Int
+  column      Column   @relation(fields: [columnId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Todo {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }

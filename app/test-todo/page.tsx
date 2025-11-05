@@ -2,7 +2,7 @@
 
 import { Todo, useTodoStore } from "@/lib/todoStore"
 import { Trash2Icon, XIcon } from 'lucide-react';
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useGSAP } from '@gsap/react'
 import gsap from 'gsap';
 
@@ -17,6 +17,17 @@ export default function TestTodo() {
     getFilteredTodo,
     clearAllTodos
   } = useTodoStore();
+
+  useEffect(() => {
+    (async () => {
+      if (typeof window === 'undefined') return;
+      try {
+        await (useTodoStore.getState().loadTodos());
+      } catch (err) {
+        throw err;
+      }
+    })();
+  }, []);
 
   const modalTodo = useRef<HTMLDivElement>(null);
   const [isShowedUp, setIsShowedUp] = useState<boolean>(false);
@@ -102,7 +113,7 @@ export default function TestTodo() {
                 <span className={`${isComplete} rounded-sm text-sm outfit-regular px-2 py-[2px]`}>{todo.completed ? "Done" : "Unfinished"}</span>
                 <div className="mt-4">
                   <p className="text-sm text-neutral-600 outfit-regular">{todo.description}</p>
-                  <p className="text-xs text-neutral-500 mt-2">{todo.createdAt.toLocaleString()}</p>
+                  <p className="text-xs text-neutral-500 mt-2">{new Date(todo.createdAt).toLocaleString()}</p>
                 </div>
               </div>
             );
