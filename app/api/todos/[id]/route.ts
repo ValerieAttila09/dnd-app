@@ -19,6 +19,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (typeof body.completed === 'boolean') data.completed = body.completed;
     if (body.title) data.title = body.title;
     if (body.description !== undefined) data.description = body.description;
+    if (body.status) data.status = body.status;
 
     const updated = await prisma.todo.update({ where: { id }, data });
     return NextResponse.json(updated);

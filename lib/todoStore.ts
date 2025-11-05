@@ -5,6 +5,7 @@ export interface Todo {
   id: string;
   title: string;
   description?: string;
+  status: 'unfinished' | 'on-progress' | 'completed';
   completed: boolean;
   createdAt: string;
 }
@@ -15,9 +16,10 @@ interface TodoStore {
   addTodo: (title: string, description?: string) => Promise<void>;
   removeTodo: (id: string) => Promise<void>;
   toggleTodo: (id: string) => Promise<void>;
+  updateTodoStatus: (id: string, status: 'unfinished' | 'on-progress' | 'completed') => Promise<void>;
   clearAllTodos: () => Promise<void>;
-  filter: 'all' | 'active' | 'completed';
-  setFilter: (filter: 'all' | 'active' | 'completed') => void;
+  filter: 'all' | 'active' | 'completed' | 'unfinished' | 'on-progress';
+  setFilter: (filter: 'all' | 'active' | 'completed' | 'unfinished' | 'on-progress') => void;
   getFilteredTodo: () => Todo[];
 }
 
@@ -51,6 +53,7 @@ export const useTodoStore = create<TodoStore>()(
             id: Math.random().toString(36).substr(2, 9),
             title,
             description,
+            status: 'unfinished',
             completed: false,
             createdAt: new Date().toISOString()
           }
@@ -95,7 +98,26 @@ export const useTodoStore = create<TodoStore>()(
           ),
         }));
       },
-      setFilter: (filter: 'all' | 'active' | 'completed') => {
+      updateTodoStatus: async (id: string, status: 'unfinished' | 'on-progress' | 'completed') => {
+        try {
+          const completed = status === 'completed';
+          await fetch(`/api/todos/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status, completed }),
+          });
+        } catch (err) {
+          // ignore
+        }
+        set((state) => ({
+          todos: state.todos.map((todo) =>
+            todo.id === id
+              ? { ...todo, status, completed: status === 'completed' }
+              : todo
+          ),
+        }));
+      },
+      setFilter: (filter: 'all' | 'active' | 'completed' | 'unfinished' | 'on-progress') => {
         set(() => ({ filter }));
       },
       getFilteredTodo: () => {

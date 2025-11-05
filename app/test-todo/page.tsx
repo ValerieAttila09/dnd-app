@@ -18,6 +18,25 @@ export default function TestTodo() {
     clearAllTodos
   } = useTodoStore();
 
+  const updateTodoStatus = useTodoStore((s) => s.updateTodoStatus);
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  const handleDrop = async (e: React.DragEvent, status: 'unfinished' | 'on-progress' | 'completed') => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData('text/plain');
+    if (!id) return;
+    await updateTodoStatus(id, status);
+  }
+
   useEffect(() => {
     (async () => {
       if (typeof window === 'undefined') return;
@@ -30,6 +49,7 @@ export default function TestTodo() {
   }, []);
 
   const modalTodo = useRef<HTMLDivElement>(null);
+  const darkLayer = useRef<HTMLDivElement>(null);
   const [isShowedUp, setIsShowedUp] = useState<boolean>(false);
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -39,6 +59,10 @@ export default function TestTodo() {
       zIndex: -1,
       opacity: 0,
       y: -50
+    });
+    gsap.set(darkLayer.current, {
+      zIndex: -1,
+      opacity: 0,
     });
   });
 
@@ -54,6 +78,21 @@ export default function TestTodo() {
         onStart: () => {
           gsap.to(modalTodo.current, {
             zIndex: 10,
+            duration: 0.3,
+            ease: 'power2.out'
+          });
+        },
+        duration: 0.3,
+        ease: 'power2.out'
+      });
+      gsap.fromTo(darkLayer.current, {
+        opacity: 0,
+        zIndex: -1,
+      }, {
+        opacity: 1,
+        onStart: () => {
+          gsap.to(darkLayer.current, {
+            zIndex: 5,
             duration: 0.3,
             ease: 'power2.out'
           });
@@ -80,6 +119,21 @@ export default function TestTodo() {
         duration: 0.3,
         ease: 'power2.out'
       });
+      gsap.fromTo(darkLayer.current, {
+        opacity: 1,
+        zIndex: 5,
+      }, {
+        opacity: 0,
+        onComplete: () => {
+          gsap.to(darkLayer.current, {
+            zIndex: -1,
+            duration: 0.3,
+            ease: 'power2.out'
+          });
+        },
+        duration: 0.3,
+        ease: 'power2.out'
+      });
       setIsShowedUp(!isShowedUp);
     }
   }
@@ -97,11 +151,58 @@ export default function TestTodo() {
         }} disabled={todos.length === 0} className="rounded-sm outfit-regular text-neutral-600 border border-[#d7d7d7] px-4 py-1 hover:bg-[#fafafa] hover:text-neutral-900 hover:border-neutral-300 transition-all disabled:opacity-50">Clear All</button>
       </div>
       <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-1 flex flex-col gap-2">
-          {todos.map((todo: Todo) => {
+        <div onDrop={(e) => handleDrop(e, 'unfinished')} onDragOver={handleDragOver} className="col-span-1 flex flex-col gap-2 p-2 border rounded">
+          <h4 className="text-sm font-medium mb-2">Unfinished</h4>
+          {todos.filter(t => t.status === 'unfinished').map((todo: Todo) => {
             const isComplete = todo.completed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
             return (
-              <div key={todo.id} className="rounded-md border border-[#d7d7d7] p-4 hover:shadow-md transition-all">
+              <div draggable onDragStart={(e) => handleDragStart(e, todo.id)} key={todo.id} className="rounded-md border border-[#d7d7d7] p-4 hover:shadow-md transition-all">
+                <div className="w-full flex items-center justify-between">
+                  <h3 className="text-lg outfit-medium text-neutral-800">{todo.title}</h3>
+                  <button onClick={() => {
+                    removeTodo(todo.id);
+                  }} className="rounded-full p-2 border border-[#d7d7d7] hover:bg-red-50 hover:border-red-200 transition-all">
+                    <Trash2Icon className="size-5" color="#898989" />
+                  </button>
+                </div>
+                <span className={`${isComplete} rounded-sm text-sm outfit-regular px-2 py-[2px]`}>{todo.completed ? "Done" : "Unfinished"}</span>
+                <div className="mt-4">
+                  <p className="text-sm text-neutral-600 outfit-regular">{todo.description}</p>
+                  <p className="text-xs text-neutral-500 mt-2">{new Date(todo.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div onDrop={(e) => handleDrop(e, 'on-progress')} onDragOver={handleDragOver} className="col-span-1 flex flex-col gap-2 p-2 border rounded">
+          <h4 className="text-sm font-medium mb-2">On Progress</h4>
+          {todos.filter(t => t.status === 'on-progress').map((todo: Todo) => {
+            const isComplete = todo.completed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
+            return (
+              <div draggable onDragStart={(e) => handleDragStart(e, todo.id)} key={todo.id} className="rounded-md border border-[#d7d7d7] p-4 hover:shadow-md transition-all">
+                <div className="w-full flex items-center justify-between">
+                  <h3 className="text-lg outfit-medium text-neutral-800">{todo.title}</h3>
+                  <button onClick={() => {
+                    removeTodo(todo.id);
+                  }} className="rounded-full p-2 border border-[#d7d7d7] hover:bg-red-50 hover:border-red-200 transition-all">
+                    <Trash2Icon className="size-5" color="#898989" />
+                  </button>
+                </div>
+                <span className={`${isComplete} rounded-sm text-sm outfit-regular px-2 py-[2px]`}>{todo.completed ? "Done" : "Unfinished"}</span>
+                <div className="mt-4">
+                  <p className="text-sm text-neutral-600 outfit-regular">{todo.description}</p>
+                  <p className="text-xs text-neutral-500 mt-2">{new Date(todo.createdAt).toLocaleString()}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div onDrop={(e) => handleDrop(e, 'completed')} onDragOver={handleDragOver} className="col-span-1 flex flex-col gap-2 p-2 border rounded">
+          <h4 className="text-sm font-medium mb-2">Completed</h4>
+          {todos.filter(t => t.status === 'completed').map((todo: Todo) => {
+            const isComplete = todo.completed ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600";
+            return (
+              <div draggable onDragStart={(e) => handleDragStart(e, todo.id)} key={todo.id} className="rounded-md border border-[#d7d7d7] p-4 hover:shadow-md transition-all">
                 <div className="w-full flex items-center justify-between">
                   <h3 className="text-lg outfit-medium text-neutral-800">{todo.title}</h3>
                   <button onClick={() => {
@@ -121,6 +222,7 @@ export default function TestTodo() {
         </div>
       </div>
 
+      <div ref={darkLayer} className="absolute inset-0 z-5 bg-black/35 m-0" />
       <div ref={modalTodo} className="overflow-hidden fixed inset-x-[30%] top-20 z-10 h-auto rounded-lg border border-[#d7d7d7] shadow-xl bg-white">
         <div className="bg-[#fafafa] border-b border-[#d7d7d7] w-full py-2 px-4 flex items-center justify-between">
           <div className="">
