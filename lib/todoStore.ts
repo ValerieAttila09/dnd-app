@@ -3,16 +3,18 @@ import { persist, devtools } from 'zustand/middleware'
 
 export interface Todo {
   id: string;
-  text: string;
+  title: string;
+  description?: string;
   completed: boolean;
   createdAt: Date;
 }
 
 interface TodoStore {
   todos: Todo[];
-  addTodo: (text: string) => void;
+  addTodo: (title: string, description: string) => void;
   removeTodo: (id: string) => void;
   toggleTodo: (id: string) => void;
+  clearAllTodos: () => void;
   filter: 'all' | 'active' | 'completed';
   setFilter: (filter: 'all' | 'active' | 'completed') => void;
   getFilteredTodo: () => Todo[];
@@ -23,10 +25,11 @@ export const useTodoStore = create<TodoStore>()(
     (set, get) => ({
       todos: [],
       filter: 'all',
-      addTodo: (text: string) => {
+      addTodo: (title: string, description: string) => {
         const newTodo: Todo = {
           id: Math.random().toString(36).substr(2, 9),
-          text,
+          title,
+          description,
           completed: false,
           createdAt: new Date()
         }
@@ -38,6 +41,9 @@ export const useTodoStore = create<TodoStore>()(
         set((state) => ({
           todos: state.todos.filter((todo) => todo.id !== id),
         }));
+      },
+      clearAllTodos: () => {
+        set(() => ({ todos: [] }));
       },
       toggleTodo: (id: string) => {
         set((state) => ({
